@@ -32,6 +32,14 @@ body,
 .settings-panel .sign-btn {
   background-color: #00a6eb !important;
 }
+/* .back-btn {
+  trasition: 0.3s !important;
+} */
+.back-btn:hover {
+  /* transform: translateY(-2px); */
+  background-color: #00a6eb !important;
+  color: #fff !important;
+}
 /* end general */
 
 /* start preloader */

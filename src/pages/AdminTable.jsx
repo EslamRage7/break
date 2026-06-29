@@ -26,6 +26,26 @@ const formatDateTime = (value) => {
   }).format(new Date(value));
 };
 
+const calculateUsedMinutes = (item) => {
+  if (!item) return 0;
+
+  if (item.status === "completed") {
+    return item.used_minutes || 0;
+  }
+
+  if (item.is_paused) {
+    return item.used_minutes || 0;
+  }
+
+  const elapsed = Math.floor(
+    (Date.now() - new Date(item.start_time).getTime()) / 1000,
+  );
+
+  const currentUsedSeconds = Math.min(elapsed, item.duration_seconds || 2700);
+
+  return Math.floor(currentUsedSeconds / 60);
+};
+
 export default function AdminTable() {
   const [currentUserId, setCurrentUserId] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
@@ -86,22 +106,16 @@ export default function AdminTable() {
 
         setIsAdmin(true);
 
-        const { data: employeeRows, error: employeesError } = await supabase
-          .from("employees")
-          .select("user_id,email,first_name,last_name,department,role")
-          .order("first_name", { ascending: true });
+        const { data: adminData, error: adminError } =
+          await supabase.functions.invoke("admin-data");
 
-        if (employeesError) throw employeesError;
+        if (adminError) throw adminError;
 
-        const { data: breakRows, error: breaksError } = await supabase
-          .from("break_sessions")
-          .select("user_id,start_time,end_time,used_minutes,status")
-          .order("start_time", { ascending: false });
+        const employeeRows = adminData?.employees || [];
+        const breakRows = adminData?.breaks || [];
 
-        if (breaksError) throw breaksError;
-
-        setEmployees(employeeRows || []);
-        setBreaks(breakRows || []);
+        setEmployees(employeeRows);
+        setBreaks(breakRows);
       } catch (err) {
         console.error(err);
         showMessage(err.message || "Failed to load admin table", "error");
@@ -177,6 +191,7 @@ export default function AdminTable() {
                     <th>Email</th>
                     <th>Department</th>
                     <th>Used</th>
+                    <th>Last Break</th>
                     <th>Role</th>
                   </tr>
                 </thead>
@@ -184,11 +199,18 @@ export default function AdminTable() {
                 <tbody>
                   {employees.map((employee, index) => {
                     const employeeBreaks = breaksByUser[employee.user_id] || [];
-                    const lastBreak = employeeBreaks[0];
                     const totalUsed = employeeBreaks.reduce(
-                      (sum, item) => sum + (item.used_minutes || 0),
+                      (sum, item) => sum + calculateUsedMinutes(item),
                       0,
                     );
+                    const lastBreak = [...employeeBreaks].sort(
+                      (a, b) =>
+                        new Date(b.start_time || 0) -
+                        new Date(a.start_time || 0),
+                    )[0];
+                    const lastBreakLabel = lastBreak
+                      ? `${formatDateTime(lastBreak.start_time)} • ${calculateUsedMinutes(lastBreak)} min`
+                      : "-";
 
                     return (
                       <tr key={employee.user_id}>
@@ -212,6 +234,11 @@ export default function AdminTable() {
                           </span>
                         </td>
                         <td>
+                          <span className="table-pill table-pill-neutral">
+                            {lastBreakLabel}
+                          </span>
+                        </td>
+                        <td>
                           <TextField
                             size="small"
                             select
@@ -219,8 +246,7 @@ export default function AdminTable() {
                             disabled={updatingUserId === employee.user_id}
                             onChange={(event) =>
                               handleRoleChange(employee, event.target.value)
-                            }
-                          >
+                            }>
                             <MenuItem value="employee">Employee</MenuItem>
                             <MenuItem value="admin">Admin</MenuItem>
                           </TextField>
@@ -248,8 +274,7 @@ export default function AdminTable() {
         anchorOrigin={{
           vertical: "top",
           horizontal: "center",
-        }}
-      >
+        }}>
         <Alert severity={snackbar.severity} variant="filled">
           {snackbar.message}
         </Alert>

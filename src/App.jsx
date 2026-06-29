@@ -5,6 +5,7 @@ import Login from "./pages/Login";
 import Break from "./components/Break";
 import AdminTable from "./pages/AdminTable";
 import BreaksTable from "./pages/BreaksTable";
+import EmployeeBreaksPage from "./pages/EmployeeBreaksPage";
 import Home from "./pages/Home";
 import VerifyEmail from "./pages/VerifyEmail";
 import Settings from "./pages/Settings";
@@ -47,6 +48,10 @@ function App() {
           <Route path="/settings" element={<Settings />} />
           <Route path="/table" element={<AdminTable />} />
           <Route path="/breaks" element={<BreaksTable />} />
+          <Route
+            path="/employee-breaks/:userId"
+            element={<EmployeeBreaksPage />}
+          />
           <Route path="/break" element={<Break />} />
         </Routes>
       </main>

@@ -25,7 +25,11 @@ export default function Break() {
   const intervalRef = useRef(null);
   const syncCounterRef = useRef(0);
 
-  const progressPercent = ((minutes * 60 + seconds) / (45 * 60)) * 100;
+  const totalDurationSeconds = BREAK_LIMIT * 60;
+  const progressPercent = Math.min(
+    100,
+    Math.max(0, ((minutes * 60 + seconds) / totalDurationSeconds) * 100),
+  );
   useEffect(() => {
     const loadUser = async () => {
       const {
@@ -120,8 +124,8 @@ export default function Break() {
 
         setSession(null);
         setRunning(false);
-        setIsFinished(true);
-        setMinutes(0);
+        setIsFinished(false);
+        setMinutes(BREAK_LIMIT);
         setSeconds(0);
         return;
       }
@@ -136,8 +140,8 @@ export default function Break() {
         await completeSession(last.id);
         setSession(null);
         setRunning(false);
-        setIsFinished(true);
-        setMinutes(0);
+        setIsFinished(false);
+        setMinutes(BREAK_LIMIT);
         setSeconds(0);
         return;
       }
@@ -157,6 +161,9 @@ export default function Break() {
   }, [user, loadTodayUsage]);
   const startBreak = async () => {
     if (!user) return;
+
+    clearInterval(intervalRef.current);
+    setIsFinished(false);
 
     const used = await loadTodayUsage(user.id);
 
@@ -292,13 +299,12 @@ export default function Break() {
     const remaining = minutes * 60 + seconds;
 
     if (remaining <= 0 && running && session.status !== "completed") {
+      clearInterval(intervalRef.current);
       setRunning(false);
-      setIsFinished(true);
-
-      setSession((prev) => ({
-        ...prev,
-        status: "completed",
-      }));
+      setIsFinished(false);
+      setMinutes(BREAK_LIMIT);
+      setSeconds(0);
+      setSession(null);
 
       supabase
         .from("break_sessions")
@@ -340,8 +346,7 @@ export default function Break() {
 
       <div
         className="timer-progress"
-        aria-label={`${Math.round(progressPercent)}% remaining`}
-      >
+        aria-label={`${Math.round(progressPercent)}% remaining`}>
         <span style={{ width: `${progressPercent}%` }}></span>
       </div>
 
@@ -365,7 +370,7 @@ export default function Break() {
       <div className="prayer-reminder">Don't forget your prayer 🙏🏻</div>
 
       <div className="timer-actions">
-        {!session && !isFinished && (
+        {(!session || isFinished) && (
           <button className="timer-button primary" onClick={startBreak}>
             Start
           </button>

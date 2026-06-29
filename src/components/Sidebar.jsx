@@ -120,7 +120,7 @@ export default function Sidebar() {
                 className={navLinkClass}
                 onClick={closeSidebar}>
                 <AccessTimeRoundedIcon fontSize="small" />
-                <span>Breaks</span>
+                <span>All Breaks</span>
               </NavLink>
             </>
           )}

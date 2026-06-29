@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Alert, CircularProgress, Snackbar } from "@mui/material";
+import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import { supabase } from "../supabaseClient";
 import Footer from "../components/Footer";
@@ -29,6 +30,7 @@ export default function BreaksTable() {
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const navigate = useNavigate();
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: "",
@@ -82,24 +84,16 @@ export default function BreaksTable() {
 
         setIsAdmin(true);
 
-        const { data: employeeRows, error: employeesError } = await supabase
-          .from("employees")
-          .select("user_id,first_name,last_name,email")
-          .order("first_name", { ascending: true });
+        const { data: adminData, error: adminError } =
+          await supabase.functions.invoke("admin-data");
 
-        if (employeesError) throw employeesError;
+        if (adminError) throw adminError;
 
-        const { data: breakRows, error: breaksError } = await supabase
-          .from("break_sessions")
-          .select(
-            "id,user_id,start_time,end_time,duration_minutes,duration_seconds,used_minutes,used_seconds,status,is_paused,paused_at",
-          )
-          .order("start_time", { ascending: false });
+        const employeeRows = adminData?.employees || [];
+        const breakRows = adminData?.breaks || [];
 
-        if (breaksError) throw breaksError;
-
-        setEmployees(employeeRows || []);
-        setBreaks(breakRows || []);
+        setEmployees(employeeRows);
+        setBreaks(breakRows);
       } catch (err) {
         console.error(err);
         showMessage(err.message || "Failed to load breaks table", "error");
@@ -124,7 +118,7 @@ export default function BreaksTable() {
       <section className="dashboard-content">
         <div className="settings-panel admin-panel">
           <div className="settings-header">
-            <h1>Breaks Table</h1>
+            <h1>All Breaks</h1>
           </div>
 
           {loading && (
@@ -163,9 +157,22 @@ export default function BreaksTable() {
                         <strong>{index + 1}</strong>
                       </td>
                       <td>
-                        <strong>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            navigate(`/employee-breaks/${item.user_id}`)
+                          }
+                          style={{
+                            background: "transparent",
+                            border: "none",
+                            padding: 0,
+                            color: "#2563eb",
+                            cursor: "pointer",
+                            fontWeight: 600,
+                            textAlign: "left",
+                          }}>
                           {employeeNamesById[item.user_id] || item.user_id}
-                        </strong>
+                        </button>
                       </td>
                       <td>{formatDateTime(item.start_time)}</td>
                       <td>{formatDateTime(item.end_time)}</td>
@@ -179,8 +186,7 @@ export default function BreaksTable() {
                               : item.status === "active"
                                 ? "table-pill-success"
                                 : "table-pill-neutral"
-                          }`}
-                        >
+                          }`}>
                           {getStatusLabel(item)}
                         </span>
                       </td>
@@ -190,8 +196,7 @@ export default function BreaksTable() {
                             item.is_paused
                               ? "table-pill-warning"
                               : "table-pill-success"
-                          }`}
-                        >
+                          }`}>
                           {item.is_paused ? "Yes" : "No"}
                         </span>
 
@@ -223,8 +228,7 @@ export default function BreaksTable() {
         anchorOrigin={{
           vertical: "top",
           horizontal: "center",
-        }}
-      >
+        }}>
         <Alert severity={snackbar.severity} variant="filled">
           {snackbar.message}
         </Alert>
