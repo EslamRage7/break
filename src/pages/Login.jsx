@@ -93,8 +93,7 @@ export default function Login() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
           className="w-100"
-          style={{ maxWidth: "500px" }}
-        >
+          style={{ maxWidth: "500px" }}>
           <div className="card shadow-lg border-0 rounded-4">
             <div className="card-body text-center p-4">
               {/* Logo */}
@@ -174,8 +173,7 @@ export default function Login() {
                               "&:hover": {
                                 backgroundColor: "transparent",
                               },
-                            }}
-                          >
+                            }}>
                             {showPassword ? (
                               <VisibilityOff sx={{ fontSize: 20 }} />
                             ) : (
@@ -198,16 +196,14 @@ export default function Login() {
                     borderRadius: 5,
                     fontWeight: 700,
                     textTransform: "none",
-                  }}
-                >
+                  }}>
                   {loading ? "Signing In..." : "Sign In"}
                 </Button>
 
                 <div className="text-center moving">
                   <Link
                     to="/register"
-                    className="text-decoration-none text-black fw-bold"
-                  >
+                    className="text-decoration-none text-black fw-bold">
                     Don't have an account? <span>Sign Up</span>
                   </Link>
                 </div>
@@ -229,8 +225,7 @@ export default function Login() {
         anchorOrigin={{
           vertical: "top",
           horizontal: "center",
-        }}
-      >
+        }}>
         <Alert severity={snackbar.severity} variant="filled">
           {snackbar.message}
         </Alert>
